@@ -127,7 +127,7 @@
           process = () => {
             c.width = 1920/cscl | 0
             c.height = 1080/cscl | 0
-            bctx.drawImage(img, 0, 0, buffer.width, buffer.height)
+            if(loaded)bctx.drawImage(img, 0, 0, buffer.width, buffer.height)
             
             l1 = bctx.getImageData(0,0,buffer.width,buffer.height)
             l2 = bctx.createImageData(buffer.width,buffer.height)
