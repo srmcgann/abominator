@@ -70,7 +70,7 @@
              resType = 'image'
           }
              
-          await fetch().then(res=>res.blob()).then(data=>img.src = URL.createObjectURL(data))
+          await fetch(url).then(res=>res.blob()).then(data=>img.src = URL.createObjectURL(data))
           
           
           buffer =  document.createElement('canvas')
