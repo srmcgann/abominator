@@ -62,7 +62,15 @@
           c.height = 1080 / cscl
 
           img = new Image()
-          await fetch(location.href.split('url=')[1].split('&')[0]).then(res=>res.blob()).then(data=>img.src = URL.createObjectURL(data))
+          url = location.href.split('url=')[1].split('&')[0]
+          if(url.toLowerCase().indexOf('.mp4') != -1 ||
+             url.toLowerCase().indexOf('.webm') != -1){
+             resType = 'video'
+          }else{
+             resType = 'image'
+          }
+             
+          await fetch().then(res=>res.blob()).then(data=>img.src = URL.createObjectURL(data))
           
           
           buffer =  document.createElement('canvas')
@@ -80,8 +88,16 @@
           })
           img.onload = () => {
             loaded = true
-            w = img.width
-            h = img.height
+            if(resType == 'image'){
+              w = img.width
+              h = img.height
+            }else{
+              w = img.videoWidth
+              h = img.videoHeight
+              img.muted = true
+              img.loop = true
+              img.play()
+            }
             if(w/h > 16/9){
               scl = w/c.width
             }else{
