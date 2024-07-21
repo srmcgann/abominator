@@ -17,10 +17,27 @@
         border-radius: 10px;
         transform: translate(-50%, -50%);
       }
+      #button{
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1000;
+        border: none;
+        border-radius: 5px;
+        background: #40f;
+        color: #fff;
+        text-shadow: 2px 2px 2px #000;
+        cursor: pointer;
+        font-size: 20px;
+        padding: 3px;
+        min-width: 50px;
+      }
     </style>
   </head>
   <body>
     <canvas id="c"></canvas>
+    <button id="button">play</button>
     <script>
       c = document.querySelector('#c')
       c.width = 1920
@@ -57,7 +74,6 @@
             cscl = 4
           }
           
-          
           c.width = 1920/	cscl
           c.height = 1080 / cscl
 
@@ -78,8 +94,8 @@
           bctx = buffer.getContext('2d', {willReadFrequently: true})
           loaded = false
           w = h = 1
-          iPv = 12
-          iPc = 4
+          iPv = 15
+          iPc = 3
           P = Array(iPc).fill().map(v=>{
             X = 0
             Y = 0
@@ -87,17 +103,24 @@
             vy = (Rn()-.5) * iPv
             return [X, Y, vx, vy]
           })
-          img.onload = () => {
-            loaded = true
+          img[resType == 'image' ? 'onload' : 'oncanplay'] = () => {
             if(resType == 'image'){
+              loaded = true
               w = img.width
               h = img.height
             }else{
+              if(playedOnce) return
               w = img.videoWidth
               h = img.videoHeight
-              img.muted = true
+              img.muted = false
               img.loop = true
-              img.play()
+              let button = document.querySelectorAll('#button')[0]
+              button.style.display='block'
+              button.onclick = () => {
+                img.play()
+                loaded = true
+                button.style.display='none'
+              }
             }
             if(w/h > 16/9){
               scl = w/c.width
@@ -118,6 +141,7 @@
           
           mx = my = 0
           mv = false
+          playedOnce = false
           window.onmousemove = e => {
             rect = c.getBoundingClientRect()
             mx = (e.pageX-rect.left) / c.clientWidth * c.width
@@ -157,12 +181,12 @@
                 lx = v[0]
                 ly = v[1]
                 d = 1+(5+Math.hypot(a = lx-X, b = ly-Y)/2) ** 2 / 2
-                d = Math.max(250, d)
+                d = Math.max(200, d)
                 tx += X + a * 500 / d
                 ty += Y + b * 500 / d
               })
               d = 1+(5+Math.hypot(a = mx2-X, b = my2-Y)/2) ** 2 / 2
-              d = Math.max(250, d)
+              d = Math.max(200, d)
               tx += X + a * 500 / d
               ty += Y + b * 500 / d
               tx /= (1+iPc)
@@ -171,13 +195,15 @@
               ty=Math.max(0, Math.min(h-1, ty)) | 0
               tidx = Math.round(ty * w + tx) * 4
               
-              red   = data1[tidx + 0]
-              green = data1[tidx + 1]
-              blue  = data1[tidx + 2]
+              //d2 = Math.hypot(mx2-X, my2-Y)
               
-              data2[i+0] = red
-              data2[i+1] = green
-              data2[i+2] = blue
+              red   = data1[tidx + 0] //- d2**2 /30 | 0
+              green = data1[tidx + 1] //- d2**2 /30 | 0
+              blue  = data1[tidx + 2] //- d2**2 /30 | 0
+              
+              data2[i+0] = green
+              data2[i+1] = blue
+              data2[i+2] = red
               data2[i+3] = 255
             }
             
