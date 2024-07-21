@@ -61,13 +61,14 @@
           c.width = 1920/	cscl
           c.height = 1080 / cscl
 
-          img = new Image()
           url = location.href.split('url=')[1].split('&')[0]
           if(url.toLowerCase().indexOf('.mp4') != -1 ||
              url.toLowerCase().indexOf('.webm') != -1){
              resType = 'video'
+             img = document.createElement('video')
           }else{
              resType = 'image'
+             img = new Image()
           }
              
           await fetch(url).then(res=>res.blob()).then(data=>img.src = URL.createObjectURL(data))
