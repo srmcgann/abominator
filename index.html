@@ -72,23 +72,46 @@
           if(location.href.split('res=').length>1){
             cscl = +location.href.split('res=')[1].split('&')[0]
           }else{
-            cscl = 4
+            cscl = 3
           }
           
           c.width = 1920/	cscl
           c.height = 1080 / cscl
 
-          url = location.href.split('url=')[1].split('&')[0]
-          if(url.toLowerCase().indexOf('.mp4') != -1 ||
-             url.toLowerCase().indexOf('.webm') != -1){
-             resType = 'video'
-             img = document.createElement('video')
+          url = location.href.split('url=')
+          if(url.length > 1){
+            url = url[1].split('&')[0]
+            if(url.toLowerCase().indexOf('.mp4') != -1 ||
+              url.toLowerCase().indexOf('.webm') != -1){
+              resType = 'video'
+              img = document.createElement('video')
+              loop = location.href.split('loop=')
+              if(loop.length > 1){
+                loop = loop[1].split('&')[0]
+                loop = loop == 'true'
+              }
+              playbackspeed = location.href.split('playbackspeed=')
+              if(playbackspeed.length > 1){
+                playbackspeed = playbackspeed[1].split('&')[0]
+              }else{
+                playbackspeed = 1
+              }
+              img.playbackRate = img.defaultPlaybackRate = +playbackspeed
+              autoplay = location.href.split('autoplay=')
+              await fetch(url).then(res=>res.blob()).then(data=>img.src = URL.createObjectURL(data))
+              if(autoplay.length > 1){
+                autoplay = autoplay[1].split('&')[0]
+              }
+            }else{
+               resType = 'image'
+               img = new Image()
+               await fetch(url).then(res=>res.blob()).then(data=>img.src = URL.createObjectURL(data))
+            }
           }else{
-             resType = 'image'
-             img = new Image()
+            resType = 'image'
+            img = new Image()
+            await fetch('https://cantelope42.github.io/cantelope.org/rotated/5dfeb44b3d6d416037dd06b44c127cb7_rotated.jpg').then(res=>res.blob()).then(data=>img.src = URL.createObjectURL(data))
           }
-             
-          await fetch(url).then(res=>res.blob()).then(data=>img.src = URL.createObjectURL(data))
           
           
           buffer =  document.createElement('canvas')
@@ -113,15 +136,23 @@
               if(playedOnce) return
               w = img.videoWidth
               h = img.videoHeight
-              img.muted = false
-              img.loop = true
-              let button = document.querySelectorAll('#button')[0]
-              button.style.display='block'
-              button.onclick = () => {
+              if(loop) img.loop = true
+              if(autoplay == 'true'){
+                img.muted = true
                 img.play()
                 playedOnce = true
                 loaded = true
                 button.style.display='none'
+              }else{
+                img.muted = false
+                let button = document.querySelectorAll('#button')[0]
+                button.style.display='block'
+                button.onclick = () => {
+                  img.play()
+                  playedOnce = true
+                  loaded = true
+                  button.style.display='none'
+                }
               }
             }
             if(w/h > 16/9){
@@ -182,12 +213,12 @@
               P.map((v, i) => {
                 lx = v[0]
                 ly = v[1]
-                d = 1+(5+Math.hypot(a = lx-X, b = ly-Y)/2) ** 2 / 2
+                d = (5+(10+Math.hypot(a = lx-X, b = ly-Y)/2) /2)** 2 / 2
                 d = Math.max(200, d)
-                tx += X + a * 500 / d
-                ty += Y + b * 500 / d
+                tx += X + a * 250 / d
+                ty += Y + b * 250 / d
               })
-              d = 1+(5+Math.hypot(a = mx2-X, b = my2-Y)/2) ** 2 / 2
+              d = (5+(10+Math.hypot(a = mx2-X, b = my2-Y)/2) /2)** 2 / 2
               d = Math.max(200, d)
               tx += X + a * 500 / d
               ty += Y + b * 500 / d
