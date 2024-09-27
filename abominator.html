@@ -98,19 +98,19 @@
               }
               img.playbackRate = img.defaultPlaybackRate = +playbackspeed
               autoplay = location.href.split('autoplay=')
-              await fetch(url, {method: "no-cors"}).then(res=>res.blob()).then(data=>img.src = URL.createObjectURL(data))
+              await fetch(url).then(res=>res.blob()).then(data=>img.src = URL.createObjectURL(data))
               if(autoplay.length > 1){
                 autoplay = autoplay[1].split('&')[0]
               }
             }else{
                resType = 'image'
                img = new Image()
-               await fetch(url, {method: "no-cors"}).then(res=>res.blob()).then(data=>img.src = URL.createObjectURL(data))
+               await fetch(url).then(res=>res.blob()).then(data=>img.src = URL.createObjectURL(data))
             }
           }else{
             resType = 'image'
             img = new Image()
-            await fetch('https://cantelope42.github.io/cantelope.org/rotated/5dfeb44b3d6d416037dd06b44c127cb7_rotated.jpg', {method: "no-cors"}).then(res=>res.blob()).then(data=>img.src = URL.createObjectURL(data))
+            await fetch('https://cantelope42.github.io/cantelope.org/rotated/5dfeb44b3d6d416037dd06b44c127cb7_rotated.jpg').then(res=>res.blob()).then(data=>img.src = URL.createObjectURL(data))
           }
           
           
