@@ -25,8 +25,8 @@
       }
     </style>
   </head>
-  <div id="container"></div>
-  <canvas id=c></canvas>
+    <div id="container"></div>
+    <canvas id=c></canvas>
     <script type="importmap">
       {
         "imports": {
@@ -44,14 +44,14 @@
       var camera, ambientLight, light, container, material, shader
       var mesh, scene, geometry, textureLoader, texture, renderer
       var vs, fs, baseUniforms, t = 0, renderTarget, finalRender
-      var background, finalScene, backgroundType
+      var background, finalScene, backgroundType, zoomLevel
       var renderWidth = 1920
       var renderHeight = 1080
       var abomCt = location.href.split('flyers=')
       if(abomCt.length > 1){
         abomCt = Math.min(15, Math.max(0, +abomCt[1].split('&')[0]))
       }else{
-        abomCt = 5
+        abomCt = 3
       }
       
       var speed= location.href.split('speed=')
@@ -63,8 +63,9 @@
       
       
       container = document.getElementById( 'container' )
+
       textureLoader = new THREE.TextureLoader()
-      camera = new THREE.PerspectiveCamera( 100, 16/9, .01, 1e8 )
+      camera = new THREE.PerspectiveCamera( 50, 16/9, .01, 1e8 )
       scene = new THREE.Scene();
       finalScene = new THREE.Scene()
       renderer = new THREE.WebGLRenderer( {antialias: true, preserveDrawingBuffer: true} )
@@ -78,17 +79,18 @@
       
       var renderTargets = Array(abomCt + 1).fill().map(v => {
         let ret = new THREE.WebGLRenderTarget(renderWidth, renderHeight, {
-          //minFilter: THREE.NearestFilter,  // cancel antialiasing
-          //magFilter: THREE.NearestFilter,  // "
+          minFilter: THREE.NearestFilter,  // cancel antialiasing
+          magFilter: THREE.NearestFilter,  // "
         })
         //ret.colorSpace = THREE.SRGBColorSpace
         return ret
       })
 
-      ambientLight = new THREE.AmbientLight( 0xffffff, 10 )
-      light = new THREE.DirectionalLight( 0xffffff, 5.0 );
+      ambientLight = new THREE.AmbientLight( 0xffffff, 1.0 )
+      light = new THREE.DirectionalLight( 0xffffff, 2.0 );
       light.position.set( 4, 4, 10 ).normalize();
       scene.add(light);
+      scene.add(ambientLight);
       //light = new THREE.DirectionalLight( 0xFFFFFF, 3.0 )
       //light.position.set( 0.032, 0.039, 0.07 )
       //scene.add( ambientLight );
@@ -116,13 +118,20 @@
           window.my = (e.pageY - rect.top) / can.clientHeight * can.height
         }
       }
+      
       var windowResize = () => {
-        camera.aspect = renderWidth / renderHeight;
-        baseUniforms.resolution.value = new THREE.Vector2(renderWidth, renderHeight)
+        zoomLevel = Math.round(window.devicePixelRatio*100)
+        renderer.setPixelRatio( window.devicePixelRatio / (zoomLevel / 100))
         renderWidth = 1920
         renderHeight= 1080
-        renderer.setSize(renderWidth, renderHeight)
+        camera.aspect = renderWidth / renderHeight;
+        let l = 1
+        //baseUniforms.resolution.value = new THREE.Vector2(renderWidth / l, renderHeight / l)
+        //uniforms.resolution.value = new THREE.Vector2(renderWidth / l, renderHeight / l)
+        renderer.setSize(renderWidth, renderHeight, false)
+        renderTargets.map(v=>v.setSize(renderWidth, renderHeight))
         camera.updateProjectionMatrix();
+
         window.can = document.querySelectorAll('canvas')[0]
         if(typeof can != 'undefined'){
           can.tabindex = 0
@@ -140,7 +149,10 @@
             can.style.height = `${(n=b.clientHeight) - margin*2}px`
             can.style.width = `${n/d - margin*2}px`
           }
+          
+          camera.updateProjectionMatrix();
         }
+
       }
       for(var i = 5; i--;) setTimeout(()=>windowResize(), 200 * i)
       window.addEventListener( 'resize', windowResize );
@@ -228,7 +240,7 @@
         background = new THREE.VideoTexture( vid )
         backgroundType = 'video'
         */
-        background = textureLoader.load( 'https://srmcgann.github.io/photography/fc402d02cd642483899593e8803319d1.jpg' )
+        background = textureLoader.load( 'https://drawings.twilightparadox.com/rotated/34b3a55a0b163ae24362988c0caaf092.jpg' )
         backgroundType = 'image'
       }
 
@@ -270,7 +282,7 @@
           'baseTexture': { value: null },
           'opacity': { value: 1.0 },
           flyers: {value: sprites},
-          clipAlpha: {value: .05},
+          clipAlpha: {value: .25},
           speed: {value: speed},
           baseTexture: {value: texture },
           mouse: {value: new THREE.Vector2(window.mx, window.my)},
@@ -331,7 +343,8 @@
             float cz = 220.0 + costheta * 200.0;
             float n = (200.0 / cz + 1.0) * genScale;
             
-            d = d1 - (n * 200.0 + n * 1e3 / (2.0 + pow(1.0 + d, 3.0)/1e3)) * 20.0 / cz / (1.0 + passes);
+            //d = d1 - (n * 200.0 + n * 1e3 / (2.0 + pow(1.0 + d, 3.0)/1e3)) * 20.0 / cz / (1.0 + passes);
+            d = d1 - (n*200.0) / (1.0+pow(1.0+d1, 3.0)/1e6);
             //d = max(0.0, d1-150.0 * genScale);
             p = atan2(a, b);
             X3 = min(resolution.x, max(0.0, X2 + sin(p) * d));
@@ -346,15 +359,17 @@
             float X, Y, ls, p, d;
             X = gl_FragCoord.x;
             Y = gl_FragCoord.y;
-            ls = 150.0;
+            ls = 250.0;
             if(finalRender == 1){
-              if(mouse.x >  X - ls &&
-                 mouse.y >  Y - ls &&
-                 mouse.x < X + ls &&
-                 mouse.y < Y + ls){
-                //vec4 col1 = vec4(1.0, 0.0, 0.0, 0.75);
-                vec2 inVert = vec2((mouse.x - X + ls/2.0) / ls,
-                                   (mouse.y - Y + ls/2.0) / ls);
+              float ax = (mouse.x - X);
+              float ay = (mouse.y - Y);
+              p = atan2(ax, ay) + t * 1.0 + pass;
+              d = hypot(ax, ay);
+              if(d < ls){
+                ax = sin(p) * d;
+                ay = cos(p) * d;
+                vec2 inVert = vec2((ax + ls/2.0) / ls,
+                                  (ay + ls/2.0) / ls);
                 vec4 col1 = texture2D( flyers[6], inVert);
                 if(col1.a >= clipAlpha){
                   vec4 col2 = texel;
@@ -363,11 +378,11 @@
                   //col = merge(col, col3);
                 }else{
                   vec2 inVert = blackhole(mouse.x, mouse.y);
-                  col = texture2D( baseTexture, inVert/resolution.xy * 1.0);
+                  col = texture2D( baseTexture, inVert/resolution.xy / 1.0);
                 }
               }else{
                 vec2 inVert = blackhole(mouse.x, mouse.y);
-                col = texture2D( baseTexture, inVert/resolution.xy * 1.0);
+                col = texture2D( baseTexture, inVert/resolution.xy / 1.0);
               }
               col = col * gamma;
             }else{
@@ -377,7 +392,7 @@
                 float Y2 = resolution.y/2.0 + sin(p*2.0) * resolution.y / 4.0;
                 float ax = (X2 - X);
                 float ay = (Y2 - Y);
-                p = atan2(ax, ay) + t * 2.0 + pass;
+                p = atan2(ax, ay) + t * 1.0 + pass;
                 d = hypot(ax, ay);
                 if(d < ls){
                   //vec4 col1 = vec4(1.0, 0.0, 0.0, 0.75);
@@ -427,7 +442,7 @@
       mesh = new THREE.Mesh( geometry, material )
       mesh.position.x = 0
       mesh.position.y = 0
-      mesh.position.z = -150
+      mesh.position.z = -386
       scene.add( mesh );
 
 
@@ -440,24 +455,25 @@
       geometry = new THREE.PlaneGeometry(50, 50)
       */
       
-      var cl = 5
-      var rw = 3
-      var br = 3
-      var sp = 18
-      geometry = new TeapotGeometry( 3, 5)
+      var cl = 3
+      var rw = 1
+      var br = 2
+      var sp = 40
+      var ofz = 100
+      geometry = new TeapotGeometry( 10, 5)
       Array(cl*rw*br).fill().map((v,i) => {
         var ox = ((i%cl)-cl/2 + .5) * sp
         var oy = (((i/cl|0)%rw)-rw/2 + .5) * sp
         var oz = ((i/cl/rw|0)-br/2 + .5) * sp
         material = new THREE.MeshPhongMaterial({
             specular: 0xffffff,
-            shininess: 15,
+            shininess: 20,
             flatShading: false,
             envMap: background,
             reflectivity: 1,
             //map: texture,
             side: THREE.DoubleSide,
-            alphaMap: texture,
+            //alphaMap: texture,
             //color: 0xffffff,
             transparent: true,
         })
@@ -468,7 +484,7 @@
         mesh.name = 'teapot'
         mesh.position.x = ox
         mesh.position.y = oy
-        mesh.position.z = oz - 50
+        mesh.position.z = oz - ofz
         scene.add( mesh );
       })
 
@@ -489,7 +505,7 @@
       mesh.name = 'final'
       mesh.position.x = 0
       mesh.position.y = 0
-      mesh.position.z = -.118
+      mesh.position.z = -.3
       finalScene.add( mesh );
 
       var draw = () => {
@@ -507,8 +523,16 @@
             break
             case 'teapot':
               if(idx){
-                el.rotation.z += Math.cos((idx+t) * speed) * .01 * speed
-                el.rotation.y += Math.sin((idx+t) * speed) * .01 * speed
+                el.rotation.z += Math.cos((idx+t) * speed) * .02 * speed
+                el.rotation.y += Math.sin((idx+t) * speed) * .02 * speed
+                
+                let X = el.position.x
+                let Y = el.position.y
+                let Z = el.position.z + ofz
+                let p = Math.atan2(Y, Z) + Math.cos(t/8) * .02
+                let d = Math.hypot(Y, Z)
+                el.position.y = Math.sin(p) * d
+                el.position.z = Math.cos(p) * d - ofz
               }
             default:
             break
@@ -551,7 +575,7 @@
         renderer.setRenderTarget(null)
         renderer.render(finalScene, camera)
         
-        
+
         requestAnimationFrame(draw)
       }
       
